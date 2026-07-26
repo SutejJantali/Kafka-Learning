@@ -1,0 +1,55 @@
+Docker commands:
+docker run -d --name zookeeper -p 2181:2181 -e ZOOKEEPER_CLIENT_PORT=2181 -e ZOOKEEPER_TICK_TIME=2000 confluentinc/cp-zookeeper:7.5.0
+
+docker run -d --name kafka -p 9092:9092 -e KAFKA_BROKER_ID=1 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 --link zookeeper confluentinc/cp-kafka:7.5.0
+
+
+Run Kafka as docker images:
+Microsoft Windows [Version 10.0.26200.8655]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\HAPPY>docker ps
+CONTAINER ID   IMAGE                             COMMAND                  CREATED          STATUS          PORTS                                        NAMES
+f3e9293e8ca4   confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   57 seconds ago   Up 51 seconds   0.0.0.0:9092->9092/tcp                       kafka
+c509d0467d3e   confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   2 minutes ago    Up 2 minutes    2888/tcp, 0.0.0.0:2181->2181/tcp, 3888/tcp   zookeeper
+
+
+C:\Users\HAPPY>docker exec -it kafka bash
+[appuser@f3e9293e8ca4 ~]$ kafka-topics --create --topic my-topic --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+Created topic my-topic.
+[appuser@f3e9293e8ca4 ~]$ kafka-topics --list --bootstrap-server localhost:9092 
+my-topic
+[appuser@f3e9293e8ca4 ~]$ kafka-topics --create --topic new-topic --bootstrap-server localhost:9092 --partitions 2 --replication-factor 1
+Created topic new-topic.
+[appuser@f3e9293e8ca4 ~]$ kafka-topics --list --bootstrap-server localhost:9092
+my-topic
+new-topic
+[appuser@f3e9293e8ca4 ~]$ kafka-topics --describe --topic my-topic --bootstrap-server localhost:9092
+Topic: my-topic TopicId: Ysouj4O_SquvIOY-rR3KOQ PartitionCount: 3       ReplicationFactor: 1    Configs:
+        Topic: my-topic Partition: 0    Leader: 1       Replicas: 1     Isr: 1
+        Topic: my-topic Partition: 1    Leader: 1       Replicas: 1     Isr: 1
+        Topic: my-topic Partition: 2    Leader: 1       Replicas: 1     Isr: 1
+[appuser@f3e9293e8ca4 ~]$ kafka-topics --describe --topic new-topic --bootstrap-server localhost:9092
+Topic: new-topic        TopicId: oUMq0UvKQhmFgIi3HxFVUw PartitionCount: 2       ReplicationFactor: 1    Configs:
+        Topic: new-topic        Partition: 0    Leader: 1       Replicas: 1     Isr: 1
+        Topic: new-topic        Partition: 1    Leader: 1       Replicas: 1     Isr: 1
+
+Split to two terminals:
+Terminal 1:
+[appuser@b6c10bd8e63e ~]$ kafka-console-producer --topic my-topic --bootstrap-server localhost:9092
+>Hey Kafka
+>Hello How are you?
+>Hello consumer
+>Hello producer
+
+Terminal 2:C:\Users\HAPPY>docker exec -it kafka bash
+[appuser@b6c10bd8e63e ~]$ kafka-console-consumer --topic my-topic --bootstrap-server localhost:9092 --from-beginning
+Hey Kafka
+Hello How are you?
+Hello consumer
+Hello producer
+
+--------------------------------------------------------------------------------------------------------------------------
+Spring Application
+
+
